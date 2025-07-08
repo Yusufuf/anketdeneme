@@ -1,43 +1,42 @@
-'use client';
+// app/dashboard/page.tsx
+import { getAuthUserId } from '@/lib/auth';
+import prisma from '@/lib/prisma';
+import { redirect } from 'next/navigation';
 
-import { useEffect, useState } from 'react';
+export default async function DashboardPage() {
+  const userId = getAuthUserId();
 
-export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null);
-
-  const fetchUser = async () => {
-  const res = await fetch('/api/me', {
-    method: 'GET',
-    credentials: 'include',
-  });
-  const data = await res.json();
-  if (res.ok) {
-    setUser(data);
+  if (!userId) {
+    redirect('/login');
   }
-};
 
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      name: true,
+      surname: true,
+      email: true,
+      age: true,
+      city: true,
+      gender: true,
+    },
+  });
 
-  useEffect(() => {
-    fetchUser();
-  }, []);
+  if (!user) {
+    redirect('/login'); // Kullanıcı bulunamazsa yine login'e at
+  }
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-
-      {user ? (
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2">
-            Hoş geldin, {user.ad} {user.soyad}
-          </h2>
-          <p>Yaş: {user.yas}</p>
-          <p>Şehir: {user.sehir}</p>
-          <p>Cinsiyet: {user.cinsiyet}</p>
-          <p>E-posta: {user.email}</p>
-        </div>
-      ) : (
-        <p>Kullanıcı bilgileri yükleniyor...</p>
-      )}
+      <div className="bg-white shadow p-4 rounded space-y-2">
+        <p><strong>Ad:</strong> {user.name}</p>
+        <p><strong>Soyad:</strong> {user.surname}</p>
+        <p><strong>E-posta:</strong> {user.email}</p>
+        <p><strong>Yaş:</strong> {user.age}</p>
+        <p><strong>Şehir:</strong> {user.city}</p>
+        <p><strong>Cinsiyet:</strong> {user.gender}</p>
+      </div>
     </div>
   );
 }

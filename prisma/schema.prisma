@@ -11,12 +11,17 @@ generator client {
 
 
 model User {
-  id       Int      @id @default(autoincrement())
-  email    String   @unique
-  password String
-  // diğer alanlar (ad, soyad, yaş, şehir vs.)
-  surveys  Survey[]
+  id        Int       @id @default(autoincrement())
+  name      String?
+  surname   String
+  city      String
+  age       Int
+  gender    String
+  email     String    @unique   // ← eklendi
+  password  String              // ← eklendi
+  surveys   Survey[]
 }
+
 
 model Survey {
   id          String     @id @default(cuid())

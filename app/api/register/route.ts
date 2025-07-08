@@ -1,42 +1,43 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { ad, soyad, yas, sehir, cinsiyet, email, password } = body;
+    const { name, surname, email, password, city, age, gender } = body;
 
-    if (!ad || !soyad || !yas || !sehir || !cinsiyet || !email || !password) {
-      return NextResponse.json({ message: 'Tüm alanlar zorunludur.' }, { status: 400 });
+    if (!name || !surname || !email || !password || !city || !age || !gender) {
+      return NextResponse.json({ message: 'Tüm alanlar zorunludur' }, { status: 400 });
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return NextResponse.json({ message: 'Bu e-posta ile kayıtlı kullanıcı zaten var.' }, { status: 400 });
+    const numericAge = parseInt(age);
+    if (isNaN(numericAge)) {
+      return NextResponse.json({ message: 'Yaş sayısal olmalı' }, { status: 400 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
-        ad,
-        soyad,
-        yas: parseInt(yas),
-        sehir,
-        cinsiyet,
+        name,
+        surname,
         email,
         password: hashedPassword,
+        city,
+        age: numericAge,
+        gender,
       },
     });
 
-    return NextResponse.json({ message: 'Kayıt başarılı.' }, { status: 201 });
-
-  } catch (error) {
-  console.error('Kayıt hatası:', error);
-  return NextResponse.json({ message: 'Sunucu hatası.' }, { status: 500 });
-}
-
+    return NextResponse.json({ message: 'Kayıt başarılı', user });
+  } catch (error: any) {
+    console.error('Register error:', error);
+    if (error.code === 'P2002') {
+      return NextResponse.json({ message: 'Bu e-posta zaten kayıtlı' }, { status: 400 });
+    }
+    return NextResponse.json({ message: error.message || 'Sunucu hatası' }, { status: 500 });
+  }
 }
