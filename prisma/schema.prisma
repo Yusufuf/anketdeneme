@@ -1,0 +1,38 @@
+// schema.prisma dosyasının EN ÜSTÜNE EKLE
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+model User {
+  id       Int      @id @default(autoincrement())
+  email    String   @unique
+  password String
+  // diğer alanlar (ad, soyad, yaş, şehir vs.)
+  surveys  Survey[]
+}
+
+model Survey {
+  id          String     @id @default(cuid())
+  title       String
+  category    String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userId      Int        // <-- BU ÇOK ÖNEMLİ
+  user        User       @relation(fields: [userId], references: [id])
+  questions   Question[]
+}
+
+
+model Question {
+  id        String   @id @default(cuid())
+  text      String
+  surveyId  String
+  survey    Survey   @relation(fields: [surveyId], references: [id])
+}
